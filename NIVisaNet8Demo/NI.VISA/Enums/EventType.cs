@@ -1,0 +1,50 @@
+﻿namespace NIVisaNet8Demo.NI.VISA.Enums;
+
+public enum EventType : uint
+{
+    Custom = 0xFFFFFFFF,
+
+    #region Event Types
+
+    VI_EVENT_IO_COMPLETION = 0x3FFF2009,
+    VI_EVENT_TRIG = 0xBFFF200A,
+    VI_EVENT_SERVICE_REQ = 0x3FFF200B,
+    VI_EVENT_CLEAR = 0x3FFF200D,
+    VI_EVENT_EXCEPTION = 0xBFFF200E,
+    VI_EVENT_GPIB_CIC = 0x3FFF2012,
+    VI_EVENT_GPIB_TALK = 0x3FFF2013,
+    VI_EVENT_GPIB_LISTEN = 0x3FFF2014,
+    VI_EVENT_VXI_VME_SYSFAIL = 0x3FFF201D,
+    VI_EVENT_VXI_VME_SYSRESET = 0x3FFF201E,
+    VI_EVENT_VXI_SIGP = 0x3FFF2020,
+    VI_EVENT_VXI_VME_INTR = 0xBFFF2021,
+    VI_EVENT_PXI_INTR = 0x3FFF2022,
+    VI_EVENT_TCPIP_CONNECT = 0x3FFF2036,
+    VI_EVENT_USB_INTR = 0x3FFF2037,
+
+    VI_ALL_ENABLED_EVENTS = 0x3FFF7FFF,
+
+    #endregion
+
+    #region This is for VXI SERVANT resources
+
+    VI_EVENT_VXI_DEV_CMD = 0xBFFF200F,
+
+    #endregion
+
+#if Windows
+
+    #region This allows extended Serial support on Win32 and on NI ENET Serial products
+
+    VI_EVENT_ASRL_BREAK = 0x3FFF2023,
+    VI_EVENT_ASRL_CTS = 0x3FFF2029,
+    VI_EVENT_ASRL_DSR = 0x3FFF202A,
+    VI_EVENT_ASRL_DCD = 0x3FFF202C,
+    VI_EVENT_ASRL_RI = 0x3FFF202E,
+    VI_EVENT_ASRL_CHAR = 0x3FFF2035,
+    VI_EVENT_ASRL_TERMCHAR = 0x3FFF2024,
+
+    #endregion
+
+#endif
+}

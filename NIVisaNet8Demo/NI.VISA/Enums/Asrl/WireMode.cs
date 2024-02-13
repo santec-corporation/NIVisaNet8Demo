@@ -1,0 +1,13 @@
+﻿namespace NIVisaNet8Demo.NI.VISA.Enums.Asrl;
+
+public enum WireMode : byte
+{
+    VI_ASRL_WIRE_UNKNOWN = 0xFF,
+    VI_ASRL_WIRE_485_4 = 0,
+    VI_ASRL_WIRE_485_2_DTR_ECHO = 1,
+    VI_ASRL_WIRE_485_2_DTR_CTRL = 2,
+    VI_ASRL_WIRE_485_2_AUTO = 3,
+    VI_ASRL_WIRE_232_DTE = 128,
+    VI_ASRL_WIRE_232_DCE = 129,
+    VI_ASRL_WIRE_232_AUTO = 130
+}
