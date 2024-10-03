@@ -39,7 +39,6 @@ SetupMPM(session, MPM);
 PrepareTSL(session, TSL);
 Start(session, TSL, MPM);
 
-ProcessData();
 return;
 
 
@@ -299,8 +298,7 @@ void Start(VisaHandle handle, Instrument tsl, Instrument mpm)
     var dataLength = (steps + 1) * 4;
     var digits = 1 + (int)Math.Log10(dataLength);
     var length = dataLength + 2 + digits;
-    var results = new byte[steps][];
-    var cnt = 0;
+    var results = new List<byte[]>(steps);
     while (mpmStatus.StartsWith('0'))
     {
         var point = mpmStatus[2..];
@@ -321,7 +319,7 @@ void Start(VisaHandle handle, Instrument tsl, Instrument mpm)
         if (logPoint != point)
         {
             Console.Write($"Measuring {point}, size: {retcnt}\r");
-            results[cnt++] = buffer;
+            results.Add(buffer);
             logPoint = point;
         }
 
@@ -332,54 +330,49 @@ void Start(VisaHandle handle, Instrument tsl, Instrument mpm)
         }
     }
 
-    using var file = File.Open("results.log", FileMode.Create, FileAccess.Write, FileShare.Read);
-    using var writer = new StreamWriter(file);
-    foreach (var result in results) writer.WriteLine(Convert.ToBase64String(result));
-
     Console.WriteLine();
     if (!VisaSendCommand(mpmHandle, "STOP")) return;
     Console.WriteLine("Measurement finished, turn shutter on");
     VisaSendCommand(tslHandle, ":POW:SHUT 1");
+
+    ProcessData(results);
 }
 
-void ProcessData()
+void ProcessData(List<byte[]> results)
 {
-    using var file = File.OpenRead("results.log");
-    using var reader = new StreamReader(file);
-    var cnt = 1;
-    var line = reader.ReadLine();
-    if (string.IsNullOrEmpty(line)) return;
-    Span<byte> data = Convert.FromBase64String(line);
-    if (data[0] != '#') return;
-    var digits = data[1] - '0';
-    var len = 0;
-    for (var i = 0; i < digits; i++) len = len * 10 + (data[2 + i] - '0');
-    var length = len / 4;
-    ReadOnlySpan<float> pre = MemoryMarshal.Cast<byte, float>(data[(2 + digits)..]);
-    var result = new float[length];
-
-    var counts = length / Vector<float>.Count;
-    var ceiling = counts * Vector<float>.Count;
-    while ((line = reader.ReadLine()) != null)
+    if (results.Count == 0) return;
+    using var file = File.Create($"result-{DateTimeOffset.Now:yyyyMMddHHmmss}.csv");
+    using var writer = new StreamWriter(file);
+    var length = 0;
+    var digits = 0;
+    for (var i = 0; i < results.Count; i++)
     {
-        data = Convert.FromBase64String(line);
-        ReadOnlySpan<float> cur = MemoryMarshal.Cast<byte, float>(data[(2 + digits)..]);
-
-        var preVec = MemoryMarshal.Cast<float, Vector<float>>(pre);
-        var curVec = MemoryMarshal.Cast<float, Vector<float>>(cur);
-        var resultVec = MemoryMarshal.Cast<float, Vector<float>>(result);
-        for (var i = 0; i < counts; i++) resultVec[i] = curVec[i] - preVec[i];
-        for (var i = ceiling; i < length; i++) result[i] = cur[i] - pre[i];
-        Console.Write($"#{cnt++}");
-        for (var i = 0; i < length; i++)
+        Span<byte> data = results[i];
+        if (i == 0)
         {
-            if (result[i] == 0) continue;
-            Console.Write($" {result[i]}");
+            if (data[0] != '#') return;
+            digits = data[1] - '0';
+            var len = 0;
+            for (var j = 0; j < digits; j++) len = len * 10 + (data[2 + j] - '0');
+            length = len / 4;
+        }
+
+        ReadOnlySpan<float> result = MemoryMarshal.Cast<byte, float>(data[(2 + digits)..]);
+
+        Console.Write($"{startWavelength + stepWavelength * i}");
+        writer.Write($"{startWavelength + stepWavelength * i}");
+        for (var j = 0; j < length; j++)
+        {
+            if (result[j] == 0) continue;
+            Console.Write($" {result[j]}");
+            writer.Write($",{result[j]}");
         }
 
         Console.WriteLine();
-        pre = cur;
+        writer.WriteLine();
     }
+
+    writer.Flush();
 }
 
 static bool VisaSendCommand(in VisaHandle handle, in string command)
