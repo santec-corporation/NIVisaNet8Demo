@@ -12,7 +12,7 @@ Instrument? TSL = null;
 Instrument? MPM = null;
 
 const byte powerUnit = 0; // 0: dBm, 1: mW
-const double power = 5D;
+const double power = 0D;
 const double startWavelength = 1520D;
 const double stopWavelength = 1580D;
 const double stepWavelength = 1D;
@@ -257,14 +257,14 @@ void Start(VisaHandle handle, Instrument tsl, Instrument mpm)
     using var mpmHandle = mpmHnd;
     Console.WriteLine("Check Shutter status");
     if (!VisaGetString(tslHandle, ":POW:SHUT?", out var shutterStatus, 4)) return;
-    if (shutterStatus == "1")
+    if (shutterStatus.Contains('1'))
     {
+        Console.WriteLine("Shutter is closed");
         if (!VisaSendCommand(tslHandle, ":POW:SHUT 0")) return;
-        Console.WriteLine("Shutter is off");
     }
     else
     {
-        Console.WriteLine("Shutter is off");
+        Console.WriteLine("Shutter is opened.");
     }
 
     Console.WriteLine("Start measuring");
@@ -332,7 +332,7 @@ void Start(VisaHandle handle, Instrument tsl, Instrument mpm)
 
     Console.WriteLine();
     if (!VisaSendCommand(mpmHandle, "STOP")) return;
-    Console.WriteLine("Measurement finished, turn shutter on");
+    Console.WriteLine("Measurement finished, turn shutter closed.");
     VisaSendCommand(tslHandle, ":POW:SHUT 1");
 
     ProcessData(results);
